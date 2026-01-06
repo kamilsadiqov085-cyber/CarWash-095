@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="az">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Moyka – Sadə Hesab (Qeyd ilə)</title>
+  <style>
+    *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    body{margin:0;background:#0b1020;color:#e8ecff}
+    .wrap{max-width:950px;margin:0 auto;padding:18px}
+    h1{margin:0 0 6px;font-size:20px}
+    .sub{color:#9aa6c3;font-size:13px;margin-bottom:14px}
+    .card{background:#121a33;border:1px solid #243057;border-radius:14px;padding:14px;margin-bottom:12px}
+    label{display:block;font-size:12px;color:#9aa6c3;margin:8px 0 6px}
+    input,select{width:100%;padding:10px 11px;border-radius:12px;border:1px solid #243057;background:#0c1430;color:#e8ecff;outline:none}
+    .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    @media (max-width:720px){.row{grid-template-columns:1fr}}
+    button{border:1px solid #243057;background:#0c1430;color:#e8ecff;padding:10px 12px;border-radius:12px;cursor:pointer}
+    button.primary{background:#1b2a57}
+    button.danger{background:#1a0c14;border-color:#3b1c2a}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .kpi{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    @media (max-width:720px){.kpi{grid-template-columns:1fr}}
+    .k{background:#0c1430;border:1px solid #243057;border-radius:14px;padding:12px}
+    .k .t{color:#9aa6c3;font-size:12px}
+    .k .v{font-size:20px;margin-top:6px}
+    .ok{color:#22c55e;font-weight:800}
+    .bad{color:#ef4444;font-weight:800}
+    table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid #243057;border-radius:14px;overflow:hidden}
+    th,td{padding:10px;border-bottom:1px solid #243057;font-size:13px}
+    th{background:#0c1430;color:#9aa6c3;text-align:left}
+    tr:last-child td{border-bottom:none}
+    .small{color:#9aa6c3;font-size:12px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Moyka – Sadə Gəlir/Xərc/Maaş (Qeyd ilə)</h1>
+  <div class="sub">Maaş faizi 40–50%. Hər gün gəlir, rasxod və rasxod qeyd yaz — xeyiri özü hesablayır.</div>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Maaş faizi (bir dəfə seç)</label>
+        <select id="pct">
+          <option value="0.40">40%</option>
+          <option value="0.45">45%</option>
+          <option value="0.50" selected>50%</option>
+        </select>
+      </div>
+      <div>
+        <label>Ay (filtr)</label>
+        <input id="month" type="month" />
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="thisMonth">Bu ay</button>
+      </div>
+    </div>
+    <div class="small" style="margin-top:10px">
+      Maaş = Gəlir × faiz. Xeyir = Gəlir − Rasxod − Maaş.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="grid-template-columns:1fr 1fr 1fr 1fr">
+      <div>
+        <label>Tarix</label>
+        <input id="date" type="date" />
+      </div>
+      <div>
+        <label>Gəlir (AZN)</label>
+        <input id="income" type="number" step="0.01" placeholder="məs: 180" />
+      </div>
+      <div>
+        <label>Rasxod (AZN)</label>
+        <input id="expense" type="number" step="0.01" placeholder="məs: 40" />
+      </div>
+      <div>
+        <label>Rasxod qeyd</label>
+        <input id="expNote" type="text" placeholder="məs: kimyəvi, su pulu..." />
+      </div>
+    </div>
+
+    <div class="btns">
+      <button class="primary" id="add">Günü əlavə et</button>
+      <button id="clear">Təmizlə</button>
+      <button class="danger" id="reset">Hamısını sil</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="kpi">
+      <div class="k">
+        <div class="t">Bu ay Gəlir</div>
+        <div class="v" id="kIncome">0.00</div>
+      </div>
+      <div class="k">
+        <div class="t">Bu ay Rasxod + Maaş</div>
+        <div class="v" id="kOut">0.00</div>
+      </div>
+      <div class="k">
+        <div class="t">Bu ay Xeyir</div>
+        <div class="v" id="kProfit">0.00</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:110px">Tarix</th>
+          <th style="width:120px">Gəlir</th>
+          <th style="width:120px">Rasxod</th>
+          <th>Qeyd</th>
+          <th style="width:120px">Maaş</th>
+          <th style="width:140px">Xeyir</th>
+          <th style="width:70px"></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="small" style="margin-top:10px">
+      Qeyd sütununda rasxodun səbəbini yaz (kimyəvi, su, təmir və s.).
+    </div>
+  </div>
+</div>
+
+<script>
+  const KEY = "moyka_simple_v2_note";
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => Number(n || 0).toFixed(2);
+
+  function todayISO(){
+    const d = new Date();
+    const z = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+    return z.toISOString().slice(0,10);
+  }
+  function monthISO(){
+    const d = new Date();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    return `${d.getFullYear()}-${m}`;
+  }
+
+  function load(){
+    try { return JSON.parse(localStorage.getItem(KEY) || "{}"); }
+    catch { return {}; }
+  }
+  function save(data){ localStorage.setItem(KEY, JSON.stringify(data)); }
+
+  function getState(){
+    const data = load();
+    if(typeof data.pct !== "number") data.pct = 0.50;
+    if(!Array.isArray(data.rows)) data.rows = [];
+    return data;
+  }
+
+  function setDefaults(){
+    const st = getState();
+    $("pct").value = String(st.pct);
+    $("month").value = monthISO();
+    $("date").value = todayISO();
+  }
+
+  function cryptoRandomId(){
+    return Math.random().toString(16).slice(2) + Date.now().toString(16);
+  }
+
+  function calcRow(date, income, expense, pct, expNote){
+    const salary = income * pct;
+    const profit = income - expense - salary;
+    return {
+      id: cryptoRandomId(),
+      date,
+      income,
+      expense,
+      expNote: expNote || "",
+      salary,
+      profit
+    };
+  }
+
+  function inMonth(dateStr, ym){
+    return dateStr && ym && dateStr.startsWith(ym + "-");
+  }
+
+  function escapeHtml(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function render(){
+    const st = getState();
+    const ym = $("month").value || monthISO();
+
+    // save pct
+    st.pct = Number($("pct").value || st.pct || 0.50);
+    save(st);
+
+    const rows = st.rows
+      .filter(r => inMonth(r.date, ym))
+      .sort((a,b)=> b.date.localeCompare(a.date));
+
+    let sumIncome = 0, sumExpense = 0, sumSalary = 0, sumProfit = 0;
+    rows.forEach(r=>{
+      sumIncome += r.income;
+      sumExpense += r.expense;
+      sumSalary += r.salary;
+      sumProfit += r.profit;
+    });
+
+    $("kIncome").textContent = fmt(sumIncome) + " AZN";
+    $("kOut").textContent = fmt(sumExpense + sumSalary) + " AZN";
+
+    const kp = $("kProfit");
+    kp.textContent = fmt(sumProfit) + " AZN";
+    kp.classList.toggle("ok", sumProfit >= 0);
+    kp.classList.toggle("bad", sumProfit < 0);
+
+    const tbody = $("tbody");
+    tbody.innerHTML = "";
+
+    for(const r of rows){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${escapeHtml(r.date)}</td>
+        <td>${fmt(r.income)} AZN</td>
+        <td>${fmt(r.expense)} AZN</td>
+        <td>${escapeHtml(r.expNote || "")}</td>
+        <td>${fmt(r.salary)} AZN</td>
+        <td class="${r.profit>=0?'ok':'bad'}">${fmt(r.profit)} AZN</td>
+        <td><button data-del="${r.id}">Sil</button></td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    tbody.querySelectorAll("button[data-del]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.getAttribute("data-del");
+        const st2 = getState();
+        st2.rows = st2.rows.filter(x=>x.id !== id);
+        save(st2);
+        render();
+      });
+    });
+  }
+
+  // Events
+  $("pct").addEventListener("change", render);
+  $("month").addEventListener("change", render);
+  $("thisMonth").addEventListener("click", ()=>{ $("month").value = monthISO(); render(); });
+
+  $("add").addEventListener("click", ()=>{
+    const date = $("date").value || todayISO();
+    const income = Number($("income").value);
+    const expense = Number($("expense").value) || 0;
+    const expNote = $("expNote").value.trim();
+    const pct = Number($("pct").value || 0.50);
+
+    if(!income || income <= 0) return alert("Gəliri düzgün yaz (0-dan böyük).");
+
+    const st = getState();
+    st.pct = pct;
+
+    const row = calcRow(date, income, expense, pct, expNote);
+    st.rows.unshift(row);
+    save(st);
+
+    $("income").value = "";
+    $("expense").value = "";
+    $("expNote").value = "";
+    $("date").value = todayISO();
+    render();
+  });
+
+  $("clear").addEventListener("click", ()=>{
+    $("income").value = "";
+    $("expense").value = "";
+    $("expNote").value = "";
+    $("date").value = todayISO();
+  });
+
+  $("reset").addEventListener("click", ()=>{
+    if(confirm("Bütün məlumatlar silinsin?")) {
+      localStorage.removeItem(KEY);
+      setDefaults();
+      render();
+    }
+  });
+
+  // Init
+  setDefaults();
+  render();
+</script>
+</body>
+</html>
+
